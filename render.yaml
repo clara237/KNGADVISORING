@@ -1,0 +1,49 @@
+# Render Blueprint - Projet complet
+# Déployer via : connecter le repo GitHub et Render détectera ce fichier
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: kngadvising-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    region: frankfurt
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kngadvising-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      # Mettre l'URL du frontend après déploiement (ex: https://kngadvising.onrender.com)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: ADMIN_EMAIL
+        value: h.gwet@tbs-education.org
+    healthCheckPath: /admin/
+
+  - type: web
+    name: kngadvising
+    runtime: static
+    rootDir: frontend
+    staticPublishPath: dist
+    buildCommand: npm ci && npm run build
+    envVars:
+      # Mettre l'URL de l'API (ex: https://kngadvising-api.onrender.com/api)
+      - key: VITE_API_BASE
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: kngadvising-db
+    databaseName: kngadvising
+    plan: free
+    region: frankfurt
